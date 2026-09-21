@@ -9,7 +9,8 @@
  */
 
 const express = require('express');
-const puppeteer = require('puppeteer');
+const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -27,25 +28,16 @@ async function getBrowser() {
       await browser.version();
       return browser;
     } catch {
-      // 浏览器崩了，销毁重建
       try { await browser.close(); } catch {}
       browser = null;
     }
   }
-  browser = await puppeteer.launch({
-    headless: 'new',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--single-process',
-      '--no-zygote',
-      '--disable-extensions',
-      '--disable-default-apps',
-      '--disable-background-networking',
-      '--memory-pressure-off',
-    ],
+  // chrome-aws-lambda 为 serverless 环境优化，内存占用小、启动快
+  browser = await chromium.puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: { width: 640, height: 640 },
+    executablePath: await chromium.executablePath,
+    headless: chromium.headless,
   });
   return browser;
 }
