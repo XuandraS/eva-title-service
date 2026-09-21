@@ -21,17 +21,32 @@ const TOKEN = process.env.TOKEN || '';
 let browser = null;
 
 async function getBrowser() {
-  if (!browser) {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-      ],
-    });
+  if (browser) {
+    // 检测浏览器是否还活着
+    try {
+      await browser.version();
+      return browser;
+    } catch {
+      // 浏览器崩了，销毁重建
+      try { await browser.close(); } catch {}
+      browser = null;
+    }
   }
+  browser = await puppeteer.launch({
+    headless: 'new',
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--single-process',
+      '--no-zygote',
+      '--disable-extensions',
+      '--disable-default-apps',
+      '--disable-background-networking',
+      '--memory-pressure-off',
+    ],
+  });
   return browser;
 }
 
